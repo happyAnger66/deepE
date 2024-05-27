@@ -181,7 +181,8 @@ class RunqSlowerBpf(BpfApp):
         super().__init__(args, filepath)
 
     def gen_bpf_text(self, args):
-        bpf_text = ""
+        global bpf_text
+        bpf_text = bpf_text
         if self.is_support_raw_tp:
             bpf_text += bpf_text_raw_tp
         else:
