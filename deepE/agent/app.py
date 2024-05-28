@@ -1,6 +1,6 @@
 # Copyright (C) @2024 Cargo Team. All rights reserved.
 # Author: zhangxiaoan
-# Contact: zhangxiaoan@didiglobal.com
+# Contact: happyAnger66@163.com
 import os
 import time
 import types
@@ -9,7 +9,7 @@ import argparse
 
 from .config import Config
 
-args_list = ["tgid", "pid",
+args_list = ["tgid", "pid", "tid",
              "user_threads_only",
              "kernel_threads_only",
              "state",
@@ -53,6 +53,13 @@ class App:
                 bp_prog = OffCpuBpf(args, self._get_log_path(bp_name))
                 bp_prog.start()
                 self.bpfs.append(bp_prog)
+            elif bp_name == "runqslower":
+                from .bpf.runqslower import RunqSlowerBpf
+                bp_prog = RunqSlowerBpf(args, self._get_log_path(bp_name))
+                bp_prog.start()
+                self.bpfs.append(bp_prog)
+            else:
+                print('unkown bpf name:%s' % bp_name)
 
     def stop(self):
         for bpf_prog in self.bpfs:
@@ -74,7 +81,7 @@ def main():
 
     try:
         while True:
-            time.sleep(1)
+            time.sleep(3)
     except KeyboardInterrupt as e:
         app.stop()
 

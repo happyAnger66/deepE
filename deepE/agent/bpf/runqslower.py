@@ -161,7 +161,7 @@ RAW_TRACEPOINT_PROBE(sched_switch)
     data.pid = next_tgid;
     data.tid = pid;
     data.prev_pid = prev_pid;
-    data.runnable_us = *tsp;
+    data.runnable_us = *tsp / 1000;
     data.delta_us = delta_us;
     bpf_probe_read_kernel_str(&data.task, sizeof(data.task), next->comm);
     bpf_probe_read_kernel_str(&data.prev_task, sizeof(data.prev_task), prev->comm);
@@ -182,38 +182,38 @@ class RunqSlowerBpf(BpfApp):
 
     def gen_bpf_text(self, args):
         global bpf_text
-        bpf_text = bpf_text
+        bpf_text_ = bpf_text
         if self.is_support_raw_tp:
-            bpf_text += bpf_text_raw_tp
+            bpf_text_ += bpf_text_raw_tp
         else:
-            bpf_text += bpf_text_kprobe
+            bpf_text_ += bpf_text_kprobe
 
         min_us = args.min_us
         # code substitutions
         if BPF.kernel_struct_has_field(b'task_struct', b'__state') == 1:
-            bpf_text = bpf_text.replace('STATE_FIELD', '__state')
+            bpf_text_ = bpf_text_.replace('STATE_FIELD', '__state')
         else:
-            bpf_text = bpf_text.replace('STATE_FIELD', 'state')
+            bpf_text_ = bpf_text_.replace('STATE_FIELD', 'state')
         if min_us == 0:
-            bpf_text = bpf_text.replace('FILTER_US', '0')
+            bpf_text_ = bpf_text_.replace('FILTER_US', '0')
         else:
-            bpf_text = bpf_text.replace('FILTER_US', 'delta_us <= %s' % str(min_us))
+            bpf_text_ = bpf_text_.replace('FILTER_US', 'delta_us <= %s' % str(min_us))
 
         if args.tid:
-            bpf_text = bpf_text.replace('FILTER_PID', 'pid != %s' % args.tid)
+            bpf_text_ = bpf_text_.replace('FILTER_PID', 'pid != %s' % args.tid)
         else:
-            bpf_text = bpf_text.replace('FILTER_PID', '0')
+            bpf_text_ = bpf_text_.replace('FILTER_PID', '0')
 
         if args.pid:
-            bpf_text = bpf_text.replace('FILTER_TGID', 'tgid != %s' % args.pid)
+            bpf_text_ = bpf_text_.replace('FILTER_TGID', 'tgid != %s' % args.pid)
         else:
-            bpf_text = bpf_text.replace('FILTER_TGID', '0')
+            bpf_text_ = bpf_text_.replace('FILTER_TGID', '0')
 
-        return bpf_text
+        return bpf_text_
 
     def handle_event(self, cpu, data, size):
         event = self.b["events"].event(data)
-        time_us = int((time.time_ns() - self.start_time) / 1000)
+        time_us = int(event.runnable_us - self.start_time)
         te = TraceSliceEvent(event.prev_task.decode('utf-8', 'replace'), event.task.decode('utf-8', 'replace'),
                         event.pid, event.tid, time_us, event.delta_us, event.delta_us, 'X')
         self.trace_proc.push_event(te)
