@@ -1,10 +1,12 @@
-import json
+import psutil
 
+import json
 from collections import namedtuple
 import queue
 from threading import Thread
 
 TraceSliceEvent = namedtuple('TraceSliceEvent', 'cat name pid tid ts dur tdur ph')
+NameMeta = namedtuple('NameMeta', 'cat args name pid tid ts ph')
 
 class TraceSliceEventProc:
     def __init__(self, MAXITEM_SIZE=10000, filepath="trace.json"):
@@ -29,6 +31,26 @@ class TraceSliceEventProc:
         self._running = False
         self._proc_thread.join(timeout=5)
 
+    def _do_one_tid_pid(self, event):
+        if event.tid not in self.meta_thread_maps:
+            item = {"name": event.name}
+            meta_data = NameMeta("__metadata", item, "thread_name", 0, event.tid, 0, 'M')
+            self.meta_thread_maps[event.tid] = meta_data
+
+        if event.pid not in self.meta_proc_maps:
+            try:
+                p = psutil.Process(event.pid)
+                item = {"name": p.name()}
+                meta_data = NameMeta("__metadata", item, "process_name", event.pid, 0, 0, 'M')
+                self.meta_proc_maps[event.pid] = meta_data
+            except psutil.NoSuchProcess as e:
+                pass
+
+#        if event.prev_pid not in self.meta_thread_maps:
+#            item = {"name": event.prev_task.decode('utf-8', 'replace')}
+#            meta_data = NameMeta("__metadata", item, "thread_name", 0, event.prev_pid, 0, 'M')
+#            self.meta_thread_maps[event.prev_pid] = meta_data
+
     def proc_func(self):
         header = '{"traceEvents":['
         tail = ']}'
@@ -41,6 +63,7 @@ class TraceSliceEventProc:
                 except queue.Empty as e:
                     continue
 
+                self._do_one_tid_pid(item)
                 f.write(json.dumps(item._asdict()))
                 f.write(',')
                 f.flush()

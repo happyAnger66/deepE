@@ -50,7 +50,7 @@ class BpfApp:
     def loop(self):
         self.b = self.attach()
 
-        self.start_time = time.time_ns()
+        self.start_time = int(BPF.monotonic_time() / 1000)
         self.b["events"].open_perf_buffer(self.handle_event, page_cnt=64)
         while self._running:
             try:

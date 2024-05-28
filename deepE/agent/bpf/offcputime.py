@@ -15,10 +15,12 @@
 # 27-Mar-2023	Rocky Xing      Added option to show symbol offsets.
 # 04-Apr-2023   Rocky Xing      Updated default stack storage size.
 import errno
+import time
 from bcc import BPF
 import argparse
 
 from . import BpfApp
+from ..event.trace_event import TraceSliceEvent
 
 # arg validation
 def positive_int(val):
@@ -56,8 +58,8 @@ BPF_STACK_TRACE(stack_traces, STACK_STORAGE_SIZE);
 struct off_event_t {
     u32 pid;
     u32 tgid;
-    u32 t_start;
-    u32 t_end;
+    u64 t_start;
+    u64 t_end;
     u64 delta;
     int user_stack_id;
     int kernel_stack_id;
@@ -100,6 +102,8 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     // create map key
     struct off_event_t oe = {};
 
+    oe.t_start = t_start / 1000;
+    oe.t_end = t_end / 1000;
     oe.pid = pid;
     oe.tgid = tgid;
     oe.user_stack_id = USER_STACK_GET;
@@ -208,5 +212,10 @@ class OffCpuBpf(BpfApp):
             else:
                 line.extend([self.b.ksym(addr).decode('utf-8', 'replace')
                              for addr in reversed(kernel_stack)])
-            print('%s %dms at %d tid:%d pid:%d ' % (event.name, event.delta/1000, BPF.monotonic_time(), event.pid, event.tgid))
-            print(line)
+#            print(event.t_start, self.start_time)
+            time_us = int(event.t_start - self.start_time)
+            te = TraceSliceEvent("\r\n".join(line), event.name.decode('utf-8', 'replace'),
+                                 event.tgid, event.pid, time_us, event.delta, event.delta,"X")
+            self.trace_proc.push_event(te)
+            #print('%s %dms at %d tid:%d pid:%d ' % (event.name, event.delta/1000, BPF.monotonic_time(), event.pid, event.tgid))
+            #print(line)
