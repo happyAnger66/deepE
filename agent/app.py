@@ -8,6 +8,7 @@ import errno
 import argparse
 
 from .config import Config
+from .bpf import BpfLoader
 
 args_list = ["tgid", "pid", "tid",
              "user_threads_only",
@@ -34,7 +35,7 @@ class App:
         self.args = args
         self.config = Config(rootpath)
         self.config.from_pyfile(os.path.join(self._get_cur_path(), "conf/config.py"))
-        self.bpfs = []
+        self.bpf_loader = BpfLoader()
 
     def _get_cur_path(self):
         return os.path.abspath(os.path.dirname(__file__))
@@ -45,25 +46,23 @@ class App:
             dir_path = "."
         return os.path.join(dir_path, f"{bp_name}_trace.log")
 
-    def load(self):
+    def start(self):
         for bp_name in self.config["BPF_PROGS"]:
             args = BpfArgs(self.config["ARGS"][bp_name])
             if bp_name == "offcputime":
                 from .bpf.offcputime import OffCpuBpf
                 bp_prog = OffCpuBpf(args, self._get_log_path(bp_name))
-                bp_prog.start()
-                self.bpfs.append(bp_prog)
+                self.bpf_loader.add_bpf_prog(bp_prog)
             elif bp_name == "runqslower":
                 from .bpf.runqslower import RunqSlowerBpf
                 bp_prog = RunqSlowerBpf(args, self._get_log_path(bp_name))
-                bp_prog.start()
-                self.bpfs.append(bp_prog)
+                self.bpf_loader.add_bpf_prog(bp_prog)
             else:
                 print('unkown bpf name:%s' % bp_name)
+        self.bpf_loader.start()
 
     def stop(self):
-        for bpf_prog in self.bpfs:
-            bpf_prog.stop()
+        self.bpf_loader.stop()
 
     def _load_one_bpf_prog(self, bpf_app):
         pass
@@ -77,7 +76,7 @@ def main():
     args = parser.parse_args()
 
     app = App(args)
-    app.load()
+    app.start()
 
     try:
         while True:

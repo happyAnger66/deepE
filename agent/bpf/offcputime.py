@@ -46,16 +46,13 @@ def stack_id_err(stack_id):
 
 # define BPF program
 bpf_text = """
-#include <uapi/linux/ptrace.h>
-#include <linux/sched.h>
-
 #define MINBLOCK_US    MINBLOCK_US_VALUEULL
 #define MAXBLOCK_US    MAXBLOCK_US_VALUEULL
 
-BPF_HASH(start, u32);
-BPF_STACK_TRACE(stack_traces, STACK_STORAGE_SIZE);
+BPF_HASH(offt_start, u32);
+BPF_STACK_TRACE(offt_stack_traces, STACK_STORAGE_SIZE);
 
-struct off_event_t {
+struct offt_event_t {
     u32 pid;
     u32 tgid;
     u64 t_start;
@@ -65,7 +62,7 @@ struct off_event_t {
     int kernel_stack_id;
     char name[TASK_COMM_LEN];
 };
-BPF_PERF_OUTPUT(events);
+BPF_PERF_OUTPUT(offt_events);
 
 int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     u32 pid = prev->pid;
@@ -75,13 +72,13 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     // record previous thread sleep time
     if ((THREAD_FILTER) && (STATE_FILTER)) {
         ts = bpf_ktime_get_ns();
-        start.update(&pid, &ts);
+        offt_start.update(&pid, &ts);
     }
 
     // get the current thread's start time
     pid = bpf_get_current_pid_tgid();
     tgid = bpf_get_current_pid_tgid() >> 32;
-    tsp = start.lookup(&pid);
+    tsp = offt_start.lookup(&pid);
     if (tsp == 0) {
         return 0;        // missed start or filtered
     }
@@ -89,7 +86,7 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     // calculate current thread's delta time
     u64 t_start = *tsp;
     u64 t_end = bpf_ktime_get_ns();
-    start.delete(&pid);
+    offt_start.delete(&pid);
     if (t_start > t_end) {
         return 0;
     }
@@ -100,7 +97,7 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     }
 
     // create map key
-    struct off_event_t oe = {};
+    struct offt_event_t oe = {};
 
     oe.t_start = t_start / 1000;
     oe.t_end = t_end / 1000;
@@ -111,7 +108,7 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     oe.delta = delta;
     bpf_get_current_comm(&oe.name, sizeof(oe.name));
 
-    events.perf_submit(ctx, &oe, sizeof(oe));
+    offt_events.perf_submit(ctx, &oe, sizeof(oe));
     return 0;
 }
 """
@@ -162,30 +159,33 @@ class OffCpuBpf(BpfApp):
         bpf_text = bpf_text.replace('MAXBLOCK_US_VALUE', str(args.max_block_time))
 
         # handle stack args
-        kernel_stack_get = "stack_traces.get_stackid(ctx, 0)"
-        user_stack_get = "stack_traces.get_stackid(ctx, BPF_F_USER_STACK)"
+        kernel_stack_get = "offt_stack_traces.get_stackid(ctx, 0)"
+        user_stack_get = "offt_stack_traces.get_stackid(ctx, BPF_F_USER_STACK)"
         stack_context = "user + kernel"
         bpf_text = bpf_text.replace('USER_STACK_GET', user_stack_get)
         bpf_text = bpf_text.replace('KERNEL_STACK_GET', kernel_stack_get)
         self.stack_context = stack_context
         return bpf_text
 
-    def attach(self):
+    def attach(self, bpf):
         # initialize BPF
-        b = BPF(text=self.bpf_text)
-        b.attach_kprobe(event_re="^finish_task_switch$|^finish_task_switch\.isra\.\d$",
+        #b = BPF(text=self.bpf_text)
+        bpf.attach_kprobe(event_re="^finish_task_switch$|^finish_task_switch\.isra\.\d$",
                         fn_name="oncpu")
-        matched = b.num_open_kprobes()
+        matched = bpf.num_open_kprobes()
         if matched == 0:
             raise RuntimeError('0 probes attached !!!')
-        return b
+        return bpf
 
-    def handle_event(self, cpu, data, size):
+    def events_name(self):
+        return "offt_events"
+
+    def handle_event(self, b, cpu, data, size):
         show_offset = True
         missing_stacks = 0
 
-        stack_traces = self.b.get_table("stack_traces")
-        event = self.b["events"].event(data)
+        stack_traces = b.get_table("offt_stack_traces")
+        event = b["offt_events"].event(data)
         if stack_id_err(event.kernel_stack_id) or stack_id_err(event.user_stack_id):
             print('missing stacks')
             missing_stacks += 1
@@ -204,13 +204,13 @@ class OffCpuBpf(BpfApp):
             if stack_id_err(event.user_stack_id):
                 line.append("[Missed User Stack]")
             else:
-                line.extend([self.b.sym(addr, event.tgid).decode('utf-8', 'replace')
+                line.extend([b.sym(addr, event.tgid).decode('utf-8', 'replace')
                              for addr in reversed(user_stack)])
             line.extend(["---"])
             if stack_id_err(event.kernel_stack_id):
                 line.append("[Missed Kernel Stack]")
             else:
-                line.extend([self.b.ksym(addr).decode('utf-8', 'replace')
+                line.extend([b.ksym(addr).decode('utf-8', 'replace')
                              for addr in reversed(kernel_stack)])
 #            print(event.t_start, self.start_time)
             time_us = int(event.t_start - self.start_time)

@@ -12,7 +12,7 @@ OFFCPUTIME_ARGS = {
 }
 
 RUNQSLOWER_ARGS = {
-    "min_us": 20000 # 20ms
+    "min_us": 10000 # 20ms
 }
 
 ARGS = {"offcputime": OFFCPUTIME_ARGS,

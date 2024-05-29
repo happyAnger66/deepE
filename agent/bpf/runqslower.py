@@ -7,14 +7,9 @@ from ..event.trace_event import TraceSliceEvent
 
 # define BPF program
 bpf_text = """
-#include <uapi/linux/ptrace.h>
-#include <linux/sched.h>
-#include <linux/nsproxy.h>
-#include <linux/pid_namespace.h>
+BPF_ARRAY(rqs_start, u64, MAX_PID);
 
-BPF_ARRAY(start, u64, MAX_PID);
-
-struct data_t {
+struct rqs_data_t {
     u32 pid;
     u32 tid;
     u32 prev_pid;
@@ -24,7 +19,7 @@ struct data_t {
     u64 delta_us;
 };
 
-BPF_PERF_OUTPUT(events);
+BPF_PERF_OUTPUT(rqs_events);
 
 // record enqueue timestamp
 static int trace_enqueue(u32 tgid, u32 pid)
@@ -32,7 +27,7 @@ static int trace_enqueue(u32 tgid, u32 pid)
     if (FILTER_PID || FILTER_TGID || pid == 0)
         return 0;
     u64 ts = bpf_ktime_get_ns();
-    start.update(&pid, &ts);
+    rqs_start.update(&pid, &ts);
     return 0;
 }
 """
@@ -61,7 +56,7 @@ int trace_run(struct pt_regs *ctx, struct task_struct *prev)
         u64 ts = bpf_ktime_get_ns();
         if (pid != 0) {
             if (!(FILTER_PID) && !(FILTER_TGID)) {
-                start.update(&pid, &ts);
+                rqs_start.update(&pid, &ts);
             }
         }
     }
@@ -71,7 +66,7 @@ int trace_run(struct pt_regs *ctx, struct task_struct *prev)
     u64 *tsp, delta_us;
 
     // fetch timestamp and calculate delta
-    tsp = start.lookup(&pid);
+    tsp = rqs_start.lookup(&pid);
     if ((tsp == 0) || (*tsp == 0)) {
         return 0;   // missed enqueue
     }
@@ -80,7 +75,7 @@ int trace_run(struct pt_regs *ctx, struct task_struct *prev)
     if (FILTER_US)
         return 0;
 
-    struct data_t data = {};
+    struct rqs_data_t data = {};
     data.pid = pid;
     data.tid = pid;
     data.prev_pid = prev->pid;
@@ -90,7 +85,7 @@ int trace_run(struct pt_regs *ctx, struct task_struct *prev)
     bpf_probe_read_kernel_str(&data.prev_task, sizeof(data.prev_task), prev->comm);
 
     // output
-    events.perf_submit(ctx, &data, sizeof(data));
+    rqs_events.perf_submit(ctx, &data, sizeof(data));
 
     //array map has no delete method, set ts to 0 instead
     *tsp = 0;
@@ -133,7 +128,7 @@ RAW_TRACEPOINT_PROBE(sched_switch)
         u64 ts = bpf_ktime_get_ns();
         if (pid != 0) {
             if (!(FILTER_PID) && !(FILTER_TGID)) {
-                start.update(&pid, &ts);
+                rqs_start.update(&pid, &ts);
             }
         }
 
@@ -146,7 +141,7 @@ RAW_TRACEPOINT_PROBE(sched_switch)
     bpf_probe_read_kernel(&pid, sizeof(next->pid), &next->pid);
 
     // fetch timestamp and calculate delta
-    tsp = start.lookup(&pid);
+    tsp = rqs_start.lookup(&pid);
     if ((tsp == 0) || (*tsp == 0)) {
         return 0;   // missed enqueue
     }
@@ -157,7 +152,7 @@ RAW_TRACEPOINT_PROBE(sched_switch)
 
     u32 next_tgid;
     bpf_probe_read_kernel(&next_tgid, sizeof(next->tgid), &next->tgid);
-    struct data_t data = {};
+    struct rqs_data_t data = {};
     data.pid = next_tgid;
     data.tid = pid;
     data.prev_pid = prev_pid;
@@ -167,7 +162,7 @@ RAW_TRACEPOINT_PROBE(sched_switch)
     bpf_probe_read_kernel_str(&data.prev_task, sizeof(data.prev_task), prev->comm);
 
     // output
-    events.perf_submit(ctx, &data, sizeof(data));
+    rqs_events.perf_submit(ctx, &data, sizeof(data));
 
     //array map has no delete method, set ts to 0 instead
     *tsp = 0;
@@ -211,16 +206,19 @@ class RunqSlowerBpf(BpfApp):
 
         return bpf_text_
 
-    def handle_event(self, cpu, data, size):
-        event = self.b["events"].event(data)
+    def events_name(self):
+        return "rqs_events"
+
+    def handle_event(self, b, cpu, data, size):
+        event = b["rqs_events"].event(data)
         time_us = int(event.runnable_us - self.start_time)
         te = TraceSliceEvent(event.prev_task.decode('utf-8', 'replace'), event.task.decode('utf-8', 'replace'),
                         event.pid, event.tid, time_us, event.delta_us, event.delta_us, 'X')
         self.trace_proc.push_event(te)
 
-    def attach(self):
-        max_pid = int(open("/proc/sys/kernel/pid_max").read())
-        bpf = BPF(text=self.bpf_text, cflags=["-DMAX_PID=%d" % max_pid])
+    def attach(self, bpf):
+        #max_pid = int(open("/proc/sys/kernel/pid_max").read())
+        #bpf = BPF(text=self.bpf_text, cflags=["-DMAX_PID=%d" % max_pid])
         if not self.is_support_raw_tp:
             bpf.attach_kprobe(event="ttwu_do_wakeup", fn_name="trace_ttwu_do_wakeup")
             bpf.attach_kprobe(event="wake_up_new_task", fn_name="trace_wake_up_new_task")
