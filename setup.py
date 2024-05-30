@@ -16,7 +16,7 @@ setup(name='deepE',
       packages=find_packages(),
       entry_points={
             'console_scripts': [
-                  'deepE=deepE.agent.app:main'
+                  'deepE=agent.app:main'
             ]
       }
 )
