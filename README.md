@@ -5,9 +5,9 @@ deepE is a performance monitoring and analysis tool specially developed for end-
 
 ## offcpu information
 
-![offcpu](./images/offcputime.png)
+![offcpu](https://github.com/happyAnger66/deepE/tree/development/images/offcputime.png)
 
 
 ## schedule latency information
 
-![schedule latency](./images/runqslower.png)
+![schedule latency](https://github.com/happyAnger66/deepE/tree/development/images/runqslower.png)
