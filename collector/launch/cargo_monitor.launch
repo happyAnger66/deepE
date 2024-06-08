@@ -1,0 +1,9 @@
+<launch>
+  <group ns="cargo">
+    <group ns="monitor">
+        <!-- launch-prefix="xterm -e gdb -ex run -/-args " -->
+        <node pkg="cargo_monitor" type="cargo_monitor_node" name="cargo_monitor">
+        </node>
+    </group>
+  </group>
+</launch>

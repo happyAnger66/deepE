@@ -1,0 +1,442 @@
+syntax = "proto3";
+
+package cargo.proto;
+
+import "google/protobuf/wrappers.proto";
+import "common_protos/header.proto";
+import "common_protos/status.proto";
+
+message UdpInfo {
+  int32 local_port = 1;
+  int32 rcv_buf = 2;
+  int32 rcv_mem = 3;
+  int32 drops = 4;
+}
+
+message ConnInfo {
+  string nodename = 1;
+  string topic = 2;
+  string direction = 3;
+  string dest_node = 4;
+  string proto = 5;
+  string status = 6;
+  string local_addr = 7;
+  string peer_addr = 8;
+  float snd_kb = 9;
+  float rcv_kb = 10;
+  int32 rcv_buf = 11;
+  int32 snd_buf = 12;
+  int32 rcv_queue = 13;
+  int32 snd_queue = 14;
+  int32 rmem = 15;
+  int32 wmem = 16;
+  int32 mss = 17;
+  float rtt = 18;
+  float snd_speed = 19;
+  float rcv_speed = 20;
+  float retrans_speed = 21;
+  float retrans_rate = 22;
+  int32 cwnd = 23;
+  int64 un_acked = 24;
+  float retrans_segs_speed = 25;
+  float retrans_segs_total_speed = 26;
+  int64 drops = 27;
+}
+
+message NetGstats {
+  string key = 1;
+  int64 value = 2;
+}
+
+message NetInfo {
+  string name = 1;
+  string status = 2;
+  int32 mtu = 3;
+  float send_rate = 4;
+  float rcv_rate = 5;
+  float send_pkts_rate = 6;
+  float rcv_pkts_rate = 7;
+  float drop_in_rate = 8;
+  float drop_out_rate = 9;
+  float fifo_in_rate = 10;
+  float fifo_out_rate = 11;
+  float err_in_rate = 12;
+  float err_out_rate = 13;
+  repeated NetGstats gstas = 20;
+}
+
+message VmInfo {
+  int32 nr_dirty = 1;
+  int32 nr_dirty_threshold = 2;
+  int32 nr_dirty_background_threshold = 3;
+  int32 dirty_writeback_centisecs = 4;  // writeback interval unit:1/100s
+  int32 dirty_expire_centisecs = 5;     // unit: 1/100s
+  int32 nr_free_pages = 6;
+}
+
+message MemDetail {
+  float swap_cached = 1;
+  float active = 2;  // MB
+  float inactive = 3;
+  float active_anon = 4;
+  float inactive_anon = 5;
+  float active_file = 6;
+  float inactive_file = 7;
+  float dirty = 8;
+  float writeback = 9;
+  float anon_Pages = 10;
+  float mapped = 11;
+  float kreclaimable = 12;
+  float sreclaimable = 13;
+  float sunreclaim = 14;
+}
+
+message FileSystemInfo {
+  string type = 1;
+  float total = 2;
+  float used = 3;
+  float free = 4;
+  float used_percent = 5;
+  string mount_point = 6;
+  float read_req_speed = 7;
+  float write_req_speed = 8;
+  float read_kb_speed = 9;
+  float write_kb_speed = 10;
+  float read_wait = 11;
+  float write_wait = 12;
+  float aqu_sz = 13;
+  float util = 14;  // 磁盘使用率
+}
+
+message NodeInfo {
+  string name = 1;
+  int32 pid = 2;
+  int32 threads = 3;
+  string status = 4;
+  float cpu_used_percent = 5;
+  float mem_used_percent = 6;
+  float write_mbytes = 7;
+  float read_mbytes = 8;
+  float read_kb_speed = 9;
+  float write_kb_speed = 10;
+  string sched_policy = 11;
+  int32 sched_prio = 12;
+  float io_delay = 13;
+  int32 voluntary_ctxt_switches = 14;
+  int32 nonvoluntary_ctxt_switches = 15;
+  int32 minflt = 16;
+  int32 majflt = 17;
+  float sched_run_time = 18;
+  float sched_wait_time = 19;
+  float sched_run_cnts = 20;
+  float rss_shmem = 21;
+  float vm_swap = 22;
+  float cpu_user_percent = 23;
+  float cpu_sys_percent = 24;
+  float cpu_wait_percent = 25;
+  int32 processor = 26;
+}
+
+message NodeThreadInfo {
+  string name = 1;
+  int32 pid = 2;
+  int32 tid = 3;
+  int32 type = 4;
+  string status = 5;
+  float cpu_used_percent = 6;
+  float write_mbytes = 7;
+  float read_mbytes = 8;
+  float read_kb_speed = 9;
+  float write_kb_speed = 10;
+  string sched_policy = 11;
+  int32 sched_prio = 12;
+  float io_delay = 13;
+  int32 voluntary_ctxt_switches = 14;
+  int32 nonvoluntary_ctxt_switches = 15;
+  int32 minflt = 16;
+  int32 majflt = 17;
+  float sched_run_time = 18;
+  float sched_wait_time = 19;
+  float sched_run_cnts = 20;
+  float cpu_user_percent = 21;
+  float cpu_sys_percent = 22;
+  float cpu_wait_percent = 23;
+  int32 processor = 24;
+}
+
+message CpuTemp {
+  string description = 1;
+  float temperature = 2;
+  float high = 3;
+  float crit = 4;
+}
+
+message GpuProcess {
+  string name = 1;
+  int32 pid = 2;
+  int32 mem_used = 3;
+  int32 gpu_used = 4;
+}
+
+message GpuPowerInfo {
+  string name = 1;
+  int32 inst_power = 2;
+  int32 avg_power = 3;
+}
+
+message GpuEmcInfo {
+  float emc_freq_mhz = 1;
+  float emc_load = 2;
+  int32 emc_mem_total = 3;
+  int32 emc_mem_used = 4;
+  float emc_mem_load = 5;
+  int32 emc_mem_swap_total = 6;
+  int32 emc_mem_swap_used = 7;
+  float emc_mem_swap_load = 8;
+}
+
+message GpuFanInfo {
+  string name = 1;
+  string profile = 2;
+  float pwm = 3;
+  int32 rpm = 4;
+}
+
+message GpuSensorInfo {
+  string name = 1;
+  float temperature = 2;
+}
+
+message GpuInfo {
+  string name = 1;
+  float temperature = 2;
+  float temperature_down = 3;
+  float temperature_slow = 4;
+  float pwr_usage = 5;
+  float pwr_cap = 6;
+  float mem_used_percent = 7;
+  float mem_total = 8;
+  float gpu_usage = 9;
+  float gpu_freq_mhz = 10;  // MHZ
+  float gpu_load = 11;      // MHZ
+  GpuEmcInfo emc_info = 12;
+  repeated GpuPowerInfo power_info = 13;
+  repeated GpuFanInfo fan_info = 14;
+  repeated GpuSensorInfo sensors_info = 15;
+}
+
+message MsgSubLatInfo {
+  string node = 1;
+  string topic = 2;
+  float latency = 3;
+}
+
+message MsgSubLatErr {
+  string node = 1;
+  string topic = 2;
+  float latency = 3;
+  float normal = 4;
+}
+
+message SoftIrq {
+  string cpu = 1;
+  float hi = 2;
+  float timer = 3;
+  float net_tx = 4;
+  float net_rx = 5;
+  float block = 6;
+  float irq_poll = 7;
+  float tasklet = 8;
+  float sched = 9;
+  float hrtimer = 10;
+  float rcu = 11;
+}
+
+message CpuIrq {
+  string cpu = 1;
+  string irq = 2;
+  float speed = 3;
+}
+
+message UdpErr {
+  int64 timestamp = 1;
+  int32 port = 2;
+  int32 tx_size = 3;
+  int32 rx_size = 4;
+  int64 tx_size_64 = 5;
+  int64 rx_size_64 = 6;
+}
+
+message NodePubInfo {
+  string node = 1;
+  string topic = 2;
+  float hz = 3;
+  float min_delta = 4;
+  float max_delta = 5;
+  float avg_delta = 6;
+  int64 min_delta_ts = 7;
+  int64 max_delta_ts = 8;
+  float min_proc_delta = 9;
+  float max_proc_delta = 10;
+  float avg_proc_delta = 11;
+  int64 min_proc_delta_ts = 12;
+  int64 max_proc_delta_ts = 13;
+  int64 data_ts = 14;
+}
+
+message NodeSubInfo {
+  string node = 1;
+  string topic = 2;
+  float hz = 3;
+  float min_delta = 4;
+  float max_delta = 5;
+  float avg_delta = 6;
+  int64 min_delta_ts = 7;
+  int64 max_delta_ts = 8;
+  float min_proc_delta = 9;
+  float max_proc_delta = 10;
+  float avg_proc_delta = 11;
+  int64 min_proc_delta_ts = 12;
+  int64 max_proc_delta_ts = 13;
+  float min_sched_delta = 14;
+  float max_sched_delta = 15;
+  float avg_sched_delta = 16;
+  int64 min_sched_delta_ts = 17;
+  int64 max_sched_delta_ts = 18;
+  int64 data_ts = 19;
+  float min_ipc = 20;
+  float max_ipc = 21;
+  float avg_ipc = 22;
+  int64 min_ipc_ts = 23;
+  int64 max_ipc_ts = 24;
+}
+
+message CpuInfo {
+  string cpu_name = 1;
+  float cpu_percent = 2;
+  float cpu_user_percent = 3;
+  float cpu_sys_percent = 4;
+  float cpu_idle_percent = 5;
+  float cpu_wa_percent = 6;
+  float cpu_si_percent = 7;
+  float cpu_hi_percent = 8;
+  float cpu_ni_percent = 9;
+}
+
+message CpuLoadInfo {
+  float load_avg_1 = 1;
+  float load_avg_5 = 2;
+  float load_avg_15 = 3;
+  int64 cs = 4;
+  int64 procs = 5;
+  int64 procs_running = 6;
+  int64 procs_blocked = 7;
+}
+
+message SnmpUdpInfo {
+  float in_speed = 1;
+  float out_speed = 2;
+  int64 in_errs = 3;
+  int64 rcvbuf_errs = 4;
+  int64 sndbuf_errs = 5;
+}
+
+message SnmpTcpInfo {
+  float in_speed = 1;
+  float out_speed = 2;
+  float retrans_speed = 3;
+  int64 in_errs = 4;
+  int64 out_rsts = 5;
+}
+
+message SnmpIpInfo {
+  float in_hdr_errs_speed = 1;
+  float in_addr_errs_speed = 2;
+  float in_unkown_protos_speed = 3;
+  float in_discards_speed = 4;
+  float out_discards_speed = 5;
+  float out_no_routes_speed = 6;
+  float reasm_timeout_speed = 7;
+  float reasm_reqds_speed = 8;
+  float reasm_oks_speed = 9;
+  float reasm_fails_speed = 10;
+  float frag_oks_speed = 11;
+  float frag_fails_speed = 12;
+  float frag_creates_speed = 13;
+}
+
+message DataItem {
+  string name = 1;
+  float value = 2;
+}
+message TcpExt {
+  repeated DataItem item = 1;
+  //  int64 rcv_zero_win_drop = 1;  // tcp pkts dropped because of rcv_win==0
+  //  int64 rcv_drop = 2;       // tcp pkts dropped because of rmem_alloc >
+  //  rcv_buf int64 rcv_queue_ofo = 3;  // tcp pkts dropped because of
+  //  rmem_alloc > rcv_buf
+}
+
+message IpExt {
+  repeated DataItem item = 1;
+}
+
+enum VehicleEvent {
+  UNKOWN = 0;
+  ENGAGEMENT = 1;
+  DISENGAGEMENT = 2;
+}
+
+message VehicleMode {
+  int64 timestamp_ns = 1;
+  VehicleEvent vehicle_event = 2;
+  int64 takeover_ns = 3;
+}
+
+message SystemInfo {
+  cargo.common.Header header = 1;
+
+  string hostname = 10;
+  float cpu_used_percent = 11;
+  float mem_free_size = 12;
+  float mem_used_percent = 13;
+  float disk_free_size = 14;
+  float disk_used_percent = 15;
+
+  repeated CpuTemp cpu_temp = 16;
+  repeated GpuProcess gpu_process = 17;
+  repeated GpuInfo gpu_info = 18;
+  repeated NodeInfo node_info = 19;
+  repeated FileSystemInfo filesystem_info = 20;
+  repeated NetInfo net_info = 21;
+  repeated ConnInfo conn_info = 22;
+  repeated MsgSubLatInfo sublat_info = 23;
+  repeated MsgSubLatErr sublat_err = 24;
+  repeated SoftIrq softirqs = 25;
+  repeated NodePubInfo node_pub_info = 26;
+  repeated NodeSubInfo node_sub_info = 27;
+  repeated NodeThreadInfo node_thread_info = 28;
+  repeated CpuInfo cpu_info = 29;
+  repeated CpuIrq cpu_irq = 30;
+  repeated UdpInfo udp_info = 31;
+  repeated cargo.common.StatusPb status_list = 100;
+  float mem_avail_size = 200;
+  float mem_buffers_size = 201;
+  float mem_cached_size = 202;
+  repeated UdpErr udp_err = 210;
+  float cpu_user_percent = 220;
+  float cpu_sys_percent = 221;
+  float cpu_idle_percent = 222;
+  float cpu_wa_percent = 223;
+  float cpu_si_percent = 224;
+  float cpu_hi_percent = 225;
+  float cpu_ni_percent = 226;
+  CpuLoadInfo cpu_load = 230;
+  MemDetail mem_detail = 240;
+  SnmpTcpInfo snmp_tcp = 241;
+  SnmpUdpInfo snmp_udp = 242;
+  SnmpIpInfo snmp_ip = 243;
+  TcpExt tcp_ext = 244;
+  IpExt ip_ext = 245;
+  VehicleMode vehicle_mode = 250;
+}

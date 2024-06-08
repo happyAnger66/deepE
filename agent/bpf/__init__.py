@@ -1,6 +1,8 @@
 from threading import Thread
 import time
 import functools
+import platform
+
 from bcc import BPF
 
 from ..event.trace_event import TraceSliceEventProc
@@ -65,6 +67,13 @@ class BpfApp:
         self._bpf_text = self.gen_bpf_text(args)
         self._running = False
         self._trace_proc = TraceSliceEventProc(filepath=output_file)
+        self._arch = platform.machine()
+        self.filter_kernel_ids = set()
+        self.filter_user_ids = set()
+
+    @property
+    def arch(self):
+        return self._arch
 
     @property
     def trace_proc(self):

@@ -22,6 +22,10 @@ import argparse
 from . import BpfApp
 from ..event.trace_event import TraceSliceEvent
 
+x86_64_kernel_stack_filters = {
+    'do_epoll_wait', 'do_sys_poll', 'do_futex', 'kern_select',
+    'core_sys_select', 'do_nanosleep'
+}
 # arg validation
 def positive_int(val):
     try:
@@ -210,8 +214,20 @@ class OffCpuBpf(BpfApp):
             if stack_id_err(event.kernel_stack_id):
                 line.append("[Missed Kernel Stack]")
             else:
-                line.extend([b.ksym(addr).decode('utf-8', 'replace')
-                             for addr in reversed(kernel_stack)])
+                if event.kernel_stack_id in self.filter_kernel_ids:
+                    return
+
+                kernel_stack_names = []
+                for addr in reversed(kernel_stack):
+                    stack_name = b.ksym(addr).decode('utf-8', 'replace')
+                    if self.arch == 'x86_64':
+                        if stack_name in x86_64_kernel_stack_filters:
+                            self.filter_kernel_ids.add(event.kernel_stack_id)
+                            return
+
+                    kernel_stack_names.append(stack_name)
+
+                line.extend(kernel_stack_names)
 #            print(event.t_start, self.start_time)
             time_us = int(event.t_start - self.start_time)
             te = TraceSliceEvent("\r\n".join(line), event.name.decode('utf-8', 'replace'),
