@@ -3,16 +3,17 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+#git config --global http.sslverify false
 git clone https://github.com/iovisor/bcc.git
 mkdir bcc/build; 
 pushd bcc/build
 
 cmake ..
-make
+make -j6
 make install
 cmake -DPYTHON_CMD=python3 .. # build python3 binding
 pushd src/python/
-make
+make -j6
 make install
 popd
 

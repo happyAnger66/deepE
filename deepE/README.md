@@ -28,8 +28,13 @@ docker build -t <docker-image-name> -f deepE/docker/Dockerfile.x86 .
 ## 3.2 run
 
 ```shell
-docker run -tid --name deepE -v $(pwd):/deepE  -v /usr/src:/usr/src:ro  -v /lib/modules/:/lib/modules:ro -v /sys/kernel/debug/:/sys/kernel/debug:rw \
+docker run -ti --name deepE -v $(pwd):/deepE  -v /usr/src:/usr/src:ro  -v /lib/modules/:/lib/modules:ro -v /sys/kernel/debug/:/sys/kernel/debug:rw \
  --net=host --pid=host --privileged <docker-image> /bin/bash
+
+~# deepE
+bpf_prog:OffCpuBpf open events:offt_events
+bpf_prog:RunqSlowerBpf open events:rqs_events
+bpf looping...
 ```
 
 
