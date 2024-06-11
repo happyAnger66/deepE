@@ -7,30 +7,30 @@ RUN sed -i "s@http://ports.ubuntu.com@http://mirrors.tuna.tsinghua.edu.cn@g" /et
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     zip unzip bison build-essential cmake flex git libedit-dev \
-    libllvm12 llvm-12-dev libclang-12-dev python zlib1g-dev libelf-dev libfl-dev python3-setuptools \
+    libllvm12 llvm-12-dev libclang-12-dev python3 zlib1g-dev libelf-dev libfl-dev python3-setuptools \
     liblzma-dev arping netperf iperf \
     && rm -rf /var/lib/apt/lists/*
 
-#COPY bcc /tmp/bcc/
-#RUN bash /tmp/bcc/make_bcc.sh
-#RUN unzip /usr/lib/python3/dist-packages/bcc*.egg -d /usr/lib/python3/dist-packages/
+COPY deepE/docker/make /tmp/make/
+RUN bash /tmp/make/make_bcc.sh
+RUN unzip /usr/lib/python3/dist-packages/bcc*.egg -d /usr/lib/python3/dist-packages/
 
 #RUN bash /tmp/bcc/make_bpftools.sh
 #RUN rm -rf /tmp/bcc
 
-RUN apt-get update \ 
-    && apt-get install -y --no-install-recommends \
-    libclang-dev \
-    clang \
-    libgtest-dev \
-    libgmock-dev \
-    asciidoctor \
-    libdw-dev \
-    libcereal-dev \
-    dwarves \
-    xxd \
-    protobuf-compiler \
-    protobuf-compiler-grpc-java-plugin
+#RUN apt-get update \ 
+#    && apt-get install -y --no-install-recommends \
+#    libclang-dev \
+#    clang \
+#    libgtest-dev \
+#    libgmock-dev \
+#    asciidoctor \
+#    libdw-dev \
+#    libcereal-dev \
+#    dwarves \
+#    xxd \
+#    protobuf-compiler \
+#    protobuf-compiler-grpc-java-plugin
 
 #COPY bpftrace /tmp/bpftrace/
 #RUN bash /tmp/bpftrace/make_bpftrace.sh

@@ -22,7 +22,7 @@ deepE is still experimental and you might experience bugs, but we're working ver
 ## 3.1 build docker image
 
 ```shell
-docker build -t <docker-image-name> -f docker/Dockerfile.x86 .
+docker build -t <docker-image-name> -f deepE/docker/Dockerfile.x86 .
 ```
 
 ## 3.2 run
