@@ -11,12 +11,12 @@ RUN apt-get update \
     liblzma-dev arping netperf iperf \
     && rm -rf /var/lib/apt/lists/*
 
-COPY bcc /tmp/bcc/
-RUN bash /tmp/bcc/make_bcc.sh
-RUN unzip /usr/lib/python3/dist-packages/bcc*.egg -d /usr/lib/python3/dist-packages/
+#COPY bcc /tmp/bcc/
+#RUN bash /tmp/bcc/make_bcc.sh
+#RUN unzip /usr/lib/python3/dist-packages/bcc*.egg -d /usr/lib/python3/dist-packages/
 
-RUN bash /tmp/bcc/make_bpftools.sh
-RUN rm -rf /tmp/bcc
+#RUN bash /tmp/bcc/make_bpftools.sh
+#RUN rm -rf /tmp/bcc
 
 RUN apt-get update \ 
     && apt-get install -y --no-install-recommends \
@@ -32,9 +32,9 @@ RUN apt-get update \
     protobuf-compiler \
     protobuf-compiler-grpc-java-plugin
 
-COPY bpftrace /tmp/bpftrace/
-RUN bash /tmp/bpftrace/make_bpftrace.sh
-RUN rm -rf /tmp/bpftrace
+#COPY bpftrace /tmp/bpftrace/
+#RUN bash /tmp/bpftrace/make_bpftrace.sh
+#RUN rm -rf /tmp/bpftrace
 
 FROM ubuntu:20.04
 
@@ -53,17 +53,19 @@ RUN apt-get update \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=0 /usr/local/bin/bpftrace /usr/local/bin/
-COPY --from=0 /usr/share/bcc/ /usr/share/bcc/
-COPY --from=0 /usr/local/share/bpftrace/ /usr/local/share/bpftrace/
-COPY --from=0 /usr/lib/python3/dist-packages/bcc/ /usr/lib/python3/dist-packages/bcc/
-COPY --from=0 /usr/lib/x86_64-linux-gnu/libbcc* /usr/lib/x86_64-linux-gnu/
-COPY --from=0 /usr/local/bin/runqslower /usr/local/bin/
+#COPY --from=0 /usr/local/bin/bpftrace /usr/local/bin/
+#COPY --from=0 /usr/share/bcc/ /usr/share/bcc/
+#COPY --from=0 /usr/local/share/bpftrace/ /usr/local/share/bpftrace/
+#COPY --from=0 /usr/lib/python3/dist-packages/bcc/ /usr/lib/python3/dist-packages/bcc/
+#COPY --from=0 /usr/lib/x86_64-linux-gnu/libbcc* /usr/lib/x86_64-linux-gnu/
+#COPY --from=0 /usr/local/bin/runqslower /usr/local/bin/
 
-COPY requirements.txt requirements.txt
+COPY docker/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple
 
-COPY RunPerf /app
-COPY FlameGraph /FlameGraph
-RUN ln -s /usr/bin/python3 /usr/bin/python
+COPY deepE /app
+RUN python3 /app/setup.py install
+#COPY RunPerf /app
+#COPY FlameGraph /FlameGraph
+#RUN ln -s /usr/bin/python3 /usr/bin/python
 ENV PATH=${PATH}:/usr/local/bin:/usr/share/bcc/tools/:/usr/local/share/bpftrace/tools
