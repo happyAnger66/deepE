@@ -6,6 +6,8 @@ deepE is a performance monitor and analysis tool specially developed for end-sid
 
 deepE is still experimental and you might experience bugs, but we're working very hard to make it stable as possible.
 
+[Introduction](https://blog.csdn.net/happyAnger6/article/details/139602370?spm=1001.2014.3001.5501)
+
 # 2. Usage examples
 
 ## 2.1 offcpu information
