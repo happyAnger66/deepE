@@ -17,7 +17,7 @@ deepE is still experimental and you might experience bugs, but we're working ver
 
 ## 2.2 schedule latency information
 
-![schedule latency](./images/runqslower.png)
+![schedule latency](https://github.com/happyAnger66/deepE/blob/main/deepE/images/runqslower.png)
 
 # 3. How to start?
 
