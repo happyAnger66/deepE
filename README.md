@@ -12,7 +12,7 @@ deepE is still experimental and you might experience bugs, but we're working ver
 
 ## 2.1 offcpu information
 
-![offcpu](./images/offcputime.png)
+![offcpu](https://github.com/happyAnger66/deepE/blob/main/deepE/images/offcputime.png)
 
 
 ## 2.2 schedule latency information
