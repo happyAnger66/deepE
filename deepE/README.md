@@ -19,13 +19,20 @@ deepE is still experimental and you might experience bugs, but we're working ver
 
 # 3. How to start?
 
-## 3.1 build docker image
+## 3.1 build docker image for x86
 
 ```shell
 docker build -t <docker-image-name> -f deepE/docker/Dockerfile.x86 .
 ```
 
-## 3.2 run
+## 3.2 build docker image for aarch64
+
+```shell
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes # in x86 host
+docker build -t <docker-image-name> -f deepE/docker/Dockerfile.aarch64 .
+```
+
+## 3.3 run
 
 ```shell
 docker run -ti --name deepE -v $(pwd):/deepE  -v /usr/src:/usr/src:ro  -v /lib/modules/:/lib/modules:ro -v /sys/kernel/debug/:/sys/kernel/debug:rw \

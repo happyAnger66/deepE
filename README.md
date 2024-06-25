@@ -21,10 +21,26 @@ deepE is still experimental and you might experience bugs, but we're working ver
 
 # 3. How to start?
 
-## 3.1 build docker image
+## 3.1 build docker image for x86
 
 ```shell
 docker build -t <docker-image-name> -f deepE/docker/Dockerfile.x86 .
+```
+
+## 3.2 build docker image for aarch64 in x86 host
+
+```shell
+# install docker and qemu
+$ sudo yum install -y yum-utils
+$ sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo 
+$ sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin \
+ qemu-system-arm qemu qemu-user qemu-kvm qemu-kvm-tools libvirt virt-install \
+ libvirt-python libguestfs-tools-c
+
+ # restart docker and set up qemu-user-static
+$ sudo systemctl restart docker
+$ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
 ```
 
 ## 3.2 run
@@ -41,3 +57,7 @@ bpf looping...
 
 
 # 4. Q && A
+
+# 5.
+
+[SigNoz](https://github.com/SigNoz)
