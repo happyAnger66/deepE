@@ -19,6 +19,72 @@ deepE is still experimental and you might experience bugs, but we're working ver
 
 ![schedule latency](https://github.com/happyAnger66/deepE/blob/main/deepE/images/runqslower.png)
 
+## 2.3 mutex lock problem.
+
+`test program`
+
+```c++
+#include <iostream>
+#include <thread>
+#include <mutex>
+
+static std::mutex lock;
+
+void func1() {
+  int loop = 5;
+  std::lock_guard<std::mutex> l(lock);
+  while (loop--) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  }
+  return;
+}
+
+void func2() {
+  std::lock_guard<std::mutex> l(lock);
+  std::cout << "get lock success" << std::endl;
+}
+
+int main() {
+  std::thread t1(func1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+  std::thread t2(func2);
+
+  t1.join();
+  t2.join();
+}
+
+```
+
+我们构造两个线程，其中一个线程在加锁状态下sleep 5s, 另外一个线程将会阻塞在锁上, 模拟实际环境中可能因锁造成的阻塞。另外主线程等待子线程结束也会阻塞在锁上.
+
+启动测试程序和deepE
+deepE使用说明
+
+启动测试程序
+```shell
+$ g++ lock_test.cc  -o lock_test -lpthread  
+$ ./lock_test
+get lock success
+```
+
+启动deepE
+``` shell
+# deepE
+bpf_prog:OffCpuBpf open events:offt_events
+bpf_prog:RunqSlowerBpf open events:rqs_events
+bpf looping...
+```
+
+等测试程序运行完后，ctrl+c停止deepE. 将当前目录下的文件offcputime_trace.log拷贝出来.   
+然后拖到ui.perfetto.dev 网址页面中. 即可看到阻塞的线程和调用栈.
+
+![lock problem](https://github.com/happyAnger66/deepE/blob/main/deepE/images/lock_test.png)
+
+
+总结
+我们可以利用这个offcputime来分析实际环境中因为各种原因造成的进程阻塞及卡顿问题.
+
 # 3. How to start?
 
 ## 3.1 build docker image for x86
