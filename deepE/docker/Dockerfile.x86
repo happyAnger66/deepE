@@ -61,10 +61,11 @@ COPY --from=0 /usr/lib/x86_64-linux-gnu/libbcc* /usr/lib/x86_64-linux-gnu/
 #COPY --from=0 /usr/local/bin/runqslower /usr/local/bin/
 
 COPY deepE/docker/requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple
+RUN pip3 install -r requirements.txt 
+#-i https://mirrors.aliyun.com/pypi/simple
 
 COPY deepE /deepE
-RUN bash install.sh
+RUN bash /deepE/install.sh
 #COPY RunPerf /app
 #COPY FlameGraph /FlameGraph
 #RUN ln -s /usr/bin/python3 /usr/bin/python
